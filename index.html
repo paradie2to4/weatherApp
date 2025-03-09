@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Station (MQTT + SQLite)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to right, #007BFF, #6610f2);
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin: auto;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        canvas {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+                padding: 15px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h2>🌤️ MQTT Weather Station</h2>
+    <div class="container">
+        <canvas id="weatherChart"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('weatherChart').getContext('2d');
+
+        const weatherChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.2)',
+                        data: [],
+                    },
+                    {
+                        label: 'Humidity (%)',
+                        borderColor: '#4dadf7',
+                        backgroundColor: 'rgba(77, 173, 247, 0.2)',
+                        data: [],
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: { display: true, text: "Time", color: "white" }
+                    },
+                    y: {
+                        title: { display: true, text: "Values", color: "white" }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: "white"
+                        }
+                    }
+                }
+            }
+        });
+
+        async function fetchWeatherData() {
+            try {
+                const response = await fetch("http://localhost:3000/data");
+                const data = await response.json();
+                
+                let timestamps = [];
+                let temperatures = [];
+                let humidities = [];
+
+                data.forEach(entry => {
+                    timestamps.push(entry.timestamp.split(" ")[1]); 
+                    if (entry.topic.includes("temperature")) {
+                        temperatures.push(parseFloat(entry.value));
+                    } else if (entry.topic.includes("humidity")) {
+                        humidities.push(parseFloat(entry.value));
+                    }
+                });
+
+                weatherChart.data.labels = timestamps;
+                weatherChart.data.datasets[0].data = temperatures;
+                weatherChart.data.datasets[1].data = humidities;
+                weatherChart.update();
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        setInterval(fetchWeatherData, 30000);
+        fetchWeatherData();
+    </script>
+
+</body>
+</html>
