@@ -36,7 +36,7 @@ npm install
 ```sh
 node server.js
 ```
-##4️⃣Usage
+4️⃣Usage
 - Open `index.html` in a browser.
 ### Contributors 
 - SHAMI HIMBAZA Paradie Emmanuella.
